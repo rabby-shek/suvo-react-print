@@ -8,13 +8,13 @@ A React component to easily print any part of the page, automatically copying st
 Install the package via npm:
 
 ```bash
-npm install suvo-react-print
+npm install printmint
 ```
 
 Or using yarn:
 
 ```bash
-yarn add suvo-react-print
+yarn add printmint
 ```
 
 ## Usage
@@ -25,7 +25,7 @@ The `ReactElementPrinter` component allows you to print content with just a few 
 
 ```jsx
 import React, { useRef } from 'react';
-import ReactElementPrinter from 'react-element-printer';
+import ReactElementPrinter from 'printmint';
 
 const MyComponent = () => {
   const printerRef = useRef();
@@ -56,7 +56,7 @@ In this example, you can print multiple sections of the page, each with differen
 
 ```jsx
 import React, { useRef } from 'react';
-import ReactElementPrinter from 'react-element-printer';
+import ReactElementPrinter from 'printmint';
 
 const MultiSectionPrint = () => {
   const sectionRef1 = useRef();
@@ -96,7 +96,7 @@ This example shows how you can use the `documentTitle` and `onBeforePrint`/`onAf
 
 ```jsx
 import React, { useRef } from 'react';
-import ReactElementPrinter from 'react-element-printer';
+import ReactElementPrinter from 'printmint';
 
 const CustomPrintExample = () => {
   const printerRef = useRef();
