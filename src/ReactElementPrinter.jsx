@@ -91,7 +91,16 @@ import React, {
 } from 'react';
 
 const ReactElementPrinter = forwardRef(
-  ({ children, documentTitle = 'Print', onBeforePrint, onAfterPrint }, ref) => {
+  (
+    {
+      children,
+      documentTitle = 'Print',
+      onBeforePrint,
+      onAfterPrint,
+      printStyles = '', // string or array of style strings
+    },
+    ref
+  ) => {
     const contentRef = useRef(null);
 
     const handlePrint = useCallback(() => {
@@ -110,18 +119,17 @@ const ReactElementPrinter = forwardRef(
 
       const doc = printWindow.document;
 
-      // Start writing the print window HTML
       doc.open();
       doc.write('<!DOCTYPE html><html><head><title>' + documentTitle + '</title>');
 
-      // --- 🔁 Copy all <style> and <link rel="stylesheet"> ---
+      // Copy existing styles
       const styles = Array.from(document.querySelectorAll('style, link[rel="stylesheet"]'));
       styles.forEach((node) => {
         const clone = node.cloneNode(true);
         doc.head.appendChild(clone);
       });
 
-      // Add print-specific styles
+      // Add default print styles
       doc.write(`
         <style>
           @media print {
@@ -136,6 +144,12 @@ const ReactElementPrinter = forwardRef(
         </style>
       `);
 
+      // Add custom styles from props
+      if (printStyles) {
+        const allStyles = Array.isArray(printStyles) ? printStyles.join('\n') : printStyles;
+        doc.write(`<style>${allStyles}</style>`);
+      }
+
       doc.write('</head><body>');
       doc.write(contentRef.current.innerHTML);
       doc.write('</body></html>');
@@ -149,7 +163,7 @@ const ReactElementPrinter = forwardRef(
           onAfterPrint?.();
         };
       };
-    }, [documentTitle, onBeforePrint, onAfterPrint]);
+    }, [documentTitle, onBeforePrint, onAfterPrint, printStyles]);
 
     useImperativeHandle(ref, () => ({ print: handlePrint }), [handlePrint]);
 
@@ -159,4 +173,5 @@ const ReactElementPrinter = forwardRef(
 
 ReactElementPrinter.displayName = 'ReactElementPrinter';
 export default ReactElementPrinter;
+
 
