@@ -34,11 +34,12 @@ const ReactElementPrinter = forwardRef(
 
       const doc = printWindow.document;
       doc.open();
+
+      // Start document
       doc.write(`
         <html>
           <head>
             <title>${documentTitle}</title>
-
             <style>
               @media print {
                 * {
@@ -46,29 +47,35 @@ const ReactElementPrinter = forwardRef(
                   print-color-adjust: exact !important;
                 }
               }
-
               ${printStyles}
             </style>
       `);
 
-      // Copy all styles from parent
+      // Add stylesheets from parent
       Array.from(document.styleSheets).forEach((styleSheet) => {
         try {
           if (styleSheet.href) {
             doc.write(`<link rel="stylesheet" href="${styleSheet.href}">`);
-          } else {
-            const rules = styleSheet.cssRules;
-            const css = Array.from(rules).map(rule => rule.cssText).join('\n');
+          } else if (styleSheet.cssRules) {
+            const css = Array.from(styleSheet.cssRules)
+              .map(rule => rule.cssText)
+              .join('\n');
             doc.write(`<style>${css}</style>`);
           }
         } catch (e) {
-          // Cross-origin stylesheet, ignore
+          // Ignore cross-origin issues
         }
       });
 
-      doc.write(`</head><body>`);
-      doc.write(`<div id="print-root">${contentRef.current.innerHTML}</div>`);
-      doc.write(`</body></html>`);
+      // Close head and add body
+      doc.write(`
+          </head>
+          <body>
+            <div id="print-root">${contentRef.current.innerHTML}</div>
+          </body>
+        </html>
+      `);
+
       doc.close();
 
       printWindow.onload = () => {

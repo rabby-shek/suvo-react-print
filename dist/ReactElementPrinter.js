@@ -30,27 +30,28 @@ var ReactElementPrinter = /*#__PURE__*/(0, _react.forwardRef)(function (_ref, re
     }
     var doc = printWindow.document;
     doc.open();
-    doc.write("\n        <html>\n          <head>\n            <title>".concat(documentTitle, "</title>\n\n            <style>\n              @media print {\n                * {\n                  -webkit-print-color-adjust: exact !important;\n                  print-color-adjust: exact !important;\n                }\n              }\n\n              ").concat(printStyles, "\n            </style>\n      "));
 
-    // Copy all styles from parent
+    // Start document
+    doc.write("\n        <html>\n          <head>\n            <title>".concat(documentTitle, "</title>\n            <style>\n              @media print {\n                * {\n                  -webkit-print-color-adjust: exact !important;\n                  print-color-adjust: exact !important;\n                }\n              }\n              ").concat(printStyles, "\n            </style>\n      "));
+
+    // Add stylesheets from parent
     Array.from(document.styleSheets).forEach(function (styleSheet) {
       try {
         if (styleSheet.href) {
           doc.write("<link rel=\"stylesheet\" href=\"".concat(styleSheet.href, "\">"));
-        } else {
-          var rules = styleSheet.cssRules;
-          var css = Array.from(rules).map(function (rule) {
+        } else if (styleSheet.cssRules) {
+          var css = Array.from(styleSheet.cssRules).map(function (rule) {
             return rule.cssText;
           }).join('\n');
           doc.write("<style>".concat(css, "</style>"));
         }
       } catch (e) {
-        // Cross-origin stylesheet, ignore
+        // Ignore cross-origin issues
       }
     });
-    doc.write("</head><body>");
-    doc.write("<div id=\"print-root\">".concat(contentRef.current.innerHTML, "</div>"));
-    doc.write("</body></html>");
+
+    // Close head and add body
+    doc.write("\n          </head>\n          <body>\n            <div id=\"print-root\">".concat(contentRef.current.innerHTML, "</div>\n          </body>\n        </html>\n      "));
     doc.close();
     printWindow.onload = function () {
       printWindow.focus();
