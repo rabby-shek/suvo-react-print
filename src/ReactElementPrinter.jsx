@@ -83,95 +83,80 @@
 // ReactElementPrinter.displayName = 'ReactElementPrinter';
 
 // export default ReactElementPrinter;
-import React, { useRef, forwardRef, useImperativeHandle, useCallback } from 'react';
+import React, {
+  useRef,
+  forwardRef,
+  useImperativeHandle,
+  useCallback,
+} from 'react';
 
-const ReactElementPrinter = forwardRef(({
-  children,
-  documentTitle = 'Print',
-  onBeforePrint,
-  onAfterPrint,
-}, ref) => {
-  const contentRef = useRef(null);
+const ReactElementPrinter = forwardRef(
+  ({ children, documentTitle = 'Print', onBeforePrint, onAfterPrint }, ref) => {
+    const contentRef = useRef(null);
 
-  const handlePrint = useCallback(() => {
-    if (!contentRef.current) {
-      console.error('No content to print');
-      return;
-    }
+    const handlePrint = useCallback(() => {
+      if (!contentRef.current) {
+        console.error('No content to print');
+        return;
+      }
 
-    onBeforePrint?.();
+      onBeforePrint?.();
 
-    const printWindow = window.open('', '_blank', 'width=800,height=600');
-    if (!printWindow) {
-      console.error('Failed to open print window. Please allow pop-ups.');
-      return;
-    }
+      const printWindow = window.open('', '_blank', 'width=800,height=600');
+      if (!printWindow) {
+        console.error('Failed to open print window. Please allow pop-ups.');
+        return;
+      }
 
-    const doc = printWindow.document;
-    doc.open();
-    doc.write('<!DOCTYPE html>');
-    doc.write('<html><head><title>' + documentTitle + '</title></head><body></body></html>');
-    doc.close();
+      const doc = printWindow.document;
 
-    // Wait until the new window's document is ready
-    printWindow.onload = () => {
-      const head = doc.head;
-      const body = doc.body;
+      // Start writing the print window HTML
+      doc.open();
+      doc.write('<!DOCTYPE html><html><head><title>' + documentTitle + '</title>');
 
-      // Add base tag for relative paths
-      const base = doc.createElement('base');
-      base.href = window.location.origin;
-      head.appendChild(base);
-
-      // Inline all accessible CSS
-      Array.from(document.styleSheets).forEach((sheet) => {
-        try {
-          const rules = sheet.cssRules;
-          if (!rules) return;
-
-          const style = doc.createElement('style');
-          style.textContent = Array.from(rules).map(rule => rule.cssText).join('\n');
-          head.appendChild(style);
-        } catch (err) {
-          console.warn('Could not access stylesheet:', sheet.href, err);
-        }
+      // --- 🔁 Copy all <style> and <link rel="stylesheet"> ---
+      const styles = Array.from(document.querySelectorAll('style, link[rel="stylesheet"]'));
+      styles.forEach((node) => {
+        const clone = node.cloneNode(true);
+        doc.head.appendChild(clone);
       });
 
       // Add print-specific styles
-      const printStyle = doc.createElement('style');
-      printStyle.textContent = `
-        @media print {
-          body {
-            -webkit-print-color-adjust: exact;
-            print-color-adjust: exact;
+      doc.write(`
+        <style>
+          @media print {
+            body {
+              -webkit-print-color-adjust: exact;
+              print-color-adjust: exact;
+            }
+            .page-break {
+              page-break-after: always;
+            }
           }
-          .page-break {
-            page-break-after: always;
-          }
-        }
-      `;
-      head.appendChild(printStyle);
+        </style>
+      `);
 
-      // Set print content
-      body.innerHTML = contentRef.current.innerHTML;
+      doc.write('</head><body>');
+      doc.write(contentRef.current.innerHTML);
+      doc.write('</body></html>');
+      doc.close();
 
-      // Wait a bit to ensure styles are applied
-      setTimeout(() => {
+      printWindow.onload = () => {
         printWindow.focus();
         printWindow.print();
         printWindow.onafterprint = () => {
           printWindow.close();
           onAfterPrint?.();
         };
-      }, 500);
-    };
-  }, [documentTitle, onBeforePrint, onAfterPrint]);
+      };
+    }, [documentTitle, onBeforePrint, onAfterPrint]);
 
-  useImperativeHandle(ref, () => ({ print: handlePrint }), [handlePrint]);
+    useImperativeHandle(ref, () => ({ print: handlePrint }), [handlePrint]);
 
-  return <div ref={contentRef}>{children}</div>;
-});
+    return <div ref={contentRef}>{children}</div>;
+  }
+);
 
 ReactElementPrinter.displayName = 'ReactElementPrinter';
-
 export default ReactElementPrinter;
+
