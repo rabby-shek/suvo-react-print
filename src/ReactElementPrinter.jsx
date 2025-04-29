@@ -35,6 +35,7 @@ const ReactElementPrinter = forwardRef(
       const doc = printWindow.document;
       doc.open();
 
+      // Start document
       doc.write(`
         <html>
           <head>
@@ -45,11 +46,12 @@ const ReactElementPrinter = forwardRef(
                   -webkit-print-color-adjust: exact !important;
                   print-color-adjust: exact !important;
                 }
+                ${printStyles}
               }
-              ${printStyles}
             </style>
       `);
 
+      // Add stylesheets from the parent document
       Array.from(document.styleSheets).forEach((styleSheet) => {
         try {
           if (styleSheet.href) {
@@ -61,17 +63,20 @@ const ReactElementPrinter = forwardRef(
             doc.write(`<style>${css}</style>`);
           }
         } catch (e) {
-          // ignore cross-origin
+          // Ignore cross-origin issues
         }
       });
 
+      // Inject inline styles for the print window
       doc.write(`
-          </head>
-          <body>
-            <div id="print-root">${contentRef.current.innerHTML}</div>
-          </body>
-        </html>
-      `);
+            </head>
+            <body>
+              <div id="print-root" style="width: 100%; padding: 10px; box-sizing: border-box;">
+                ${contentRef.current.innerHTML}
+              </div>
+            </body>
+          </html>
+        `);
 
       doc.close();
 

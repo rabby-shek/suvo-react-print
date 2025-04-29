@@ -1,23 +1,17 @@
 {
   "name": "printmint",
-  "version": "1.0.14",
-  "description": "React component to print specific elements",
-  "main": "index.js",
+  "version": "1.0.13",
+  "main": "dist/ReactElementPrinter.js",
   "scripts": {
-    "build": "babel src --out-dir dist --extensions \".js,.jsx\"",
-    "test": "echo \"No tests yet\""
+    "build": "babel src --out-dir dist --extensions \".js,.jsx\""
   },
-  "keywords": [
-    "react",
-    "print",
-    "component",
-    "printmint"
+  "files": [
+    "dist",
+    "README.md"
   ],
-  "author": "Your Name",
-  "license": "ISC",
   "peerDependencies": {
-    "react": "^18.0.0",
-    "react-dom": "^18.0.0"
+    "react": "^17.0.0 || ^18.0.0",
+    "react-dom": "^17.0.0 || ^18.0.0"
   },
   "devDependencies": {
     "@babel/cli": "^7.27.0",
@@ -26,10 +20,5 @@
     "@babel/preset-react": "^7.26.3",
     "react": "^18.0.0",
     "react-dom": "^18.0.0"
-  },
-  "files": [
-    "dist",
-    "index.js",
-    "README.md"
-  ]
+  }
 }

@@ -30,7 +30,11 @@ var ReactElementPrinter = /*#__PURE__*/(0, _react.forwardRef)(function (_ref, re
     }
     var doc = printWindow.document;
     doc.open();
-    doc.write("\n        <html>\n          <head>\n            <title>".concat(documentTitle, "</title>\n            <style>\n              @media print {\n                * {\n                  -webkit-print-color-adjust: exact !important;\n                  print-color-adjust: exact !important;\n                }\n              }\n              ").concat(printStyles, "\n            </style>\n      "));
+
+    // Start document
+    doc.write("\n        <html>\n          <head>\n            <title>".concat(documentTitle, "</title>\n            <style>\n              @media print {\n                * {\n                  -webkit-print-color-adjust: exact !important;\n                  print-color-adjust: exact !important;\n                }\n                ").concat(printStyles, "\n              }\n            </style>\n      "));
+
+    // Add stylesheets from the parent document
     Array.from(document.styleSheets).forEach(function (styleSheet) {
       try {
         if (styleSheet.href) {
@@ -42,10 +46,12 @@ var ReactElementPrinter = /*#__PURE__*/(0, _react.forwardRef)(function (_ref, re
           doc.write("<style>".concat(css, "</style>"));
         }
       } catch (e) {
-        // ignore cross-origin
+        // Ignore cross-origin issues
       }
     });
-    doc.write("\n          </head>\n          <body>\n            <div id=\"print-root\">".concat(contentRef.current.innerHTML, "</div>\n          </body>\n        </html>\n      "));
+
+    // Inject inline styles for the print window
+    doc.write("\n            </head>\n            <body>\n              <div id=\"print-root\" style=\"width: 100%; padding: 10px; box-sizing: border-box;\">\n                ".concat(contentRef.current.innerHTML, "\n              </div>\n            </body>\n          </html>\n        "));
     doc.close();
     printWindow.onload = function () {
       printWindow.focus();
