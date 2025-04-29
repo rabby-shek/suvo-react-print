@@ -1,9 +1,13 @@
+// src/ReactElementPrinter.jsx
 import React, {
   useRef,
   forwardRef,
   useImperativeHandle,
   useCallback,
+  useEffect,
+  useState,
 } from 'react';
+import { createRoot } from 'react-dom/client';
 
 const ReactElementPrinter = forwardRef(
   (
@@ -12,77 +16,70 @@ const ReactElementPrinter = forwardRef(
       documentTitle = 'Print',
       onBeforePrint,
       onAfterPrint,
-      printStyles = '', // Optional custom styles
+      printStyles = '',
     },
     ref
   ) => {
     const contentRef = useRef(null);
+    const [container, setContainer] = useState(null);
 
     const handlePrint = useCallback(() => {
-      if (!contentRef.current) {
-        console.error('No content to print');
-        return;
-      }
-
       onBeforePrint?.();
 
       const printWindow = window.open('', '_blank', 'width=800,height=600');
-      if (!printWindow) {
-        console.error('Failed to open print window. Please allow pop-ups.');
+      if (!printWindow || !printWindow.document) {
+        console.error('Print window failed to open.');
         return;
       }
 
-      const doc = printWindow.document;
+      const printDoc = printWindow.document;
+      const rootDiv = printDoc.createElement('div');
+      rootDiv.id = 'print-root';
+      printDoc.body.appendChild(rootDiv);
 
-      doc.open();
-      doc.write('<!DOCTYPE html><html><head><title>' + documentTitle + '</title>');
+      // Inject styles
+      const styleTag = printDoc.createElement('style');
+      styleTag.type = 'text/css';
+      styleTag.innerHTML = `
+        @media print {
+          * {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+        }
+        ${printStyles}
+      `;
+      printDoc.head.appendChild(styleTag);
 
-      // Copy all current styles
-      const styles = Array.from(document.querySelectorAll('style, link[rel="stylesheet"]'));
-      styles.forEach((node) => {
-        const clone = node.cloneNode(true);
-        doc.head.appendChild(clone);
+      // Clone original styles
+      document.querySelectorAll('style, link[rel="stylesheet"]').forEach((node) => {
+        printDoc.head.appendChild(node.cloneNode(true));
       });
 
-      // Add built-in print styles
-      doc.write(`
-        <style>
-          @media print {
-            body {
-              -webkit-print-color-adjust: exact;
-              print-color-adjust: exact;
-            }
-            .page-break {
-              page-break-after: always;
-            }
-          }
-        </style>
-      `);
+      const renderRoot = createRoot(rootDiv);
+      renderRoot.render(
+        <div ref={contentRef}>
+          {children}
+        </div>
+      );
 
-      // Add custom styles
-      if (printStyles) {
-        const allStyles = Array.isArray(printStyles) ? printStyles.join('\n') : printStyles;
-        doc.write(`<style>${allStyles}</style>`);
-      }
-
-      doc.write('</head><body>');
-      doc.write(contentRef.current.innerHTML);
-      doc.write('</body></html>');
-      doc.close();
-
-      printWindow.onload = () => {
+      // Wait a tick before printing
+      setTimeout(() => {
         printWindow.focus();
         printWindow.print();
+
         printWindow.onafterprint = () => {
           printWindow.close();
           onAfterPrint?.();
         };
-      };
-    }, [documentTitle, onBeforePrint, onAfterPrint, printStyles]);
+      }, 500);
+    }, [children, printStyles, documentTitle, onBeforePrint, onAfterPrint]);
 
-    useImperativeHandle(ref, () => ({ print: handlePrint }), [handlePrint]);
+    useImperativeHandle(ref, () => ({
+      print: handlePrint,
+    }));
 
-    return <div ref={contentRef} style={{ display: 'none' }}>{children}</div>; // hide from normal UI
+    return null;
   }
 );
 
