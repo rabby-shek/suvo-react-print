@@ -1,3 +1,88 @@
+// import React, { useRef, forwardRef, useImperativeHandle, useCallback } from 'react';
+
+// const ReactElementPrinter = forwardRef(({
+//   children,
+//   documentTitle = 'Print',
+//   onBeforePrint,
+//   onAfterPrint,
+// }, ref) => {
+//   const contentRef = useRef(null);
+
+//   const handlePrint = useCallback(() => {
+//     if (!contentRef.current) {
+//       console.error('No content to print');
+//       return;
+//     }
+
+//     onBeforePrint?.();
+
+//     const printWindow = window.open('', '_blank', 'width=800,height=600');
+//     if (!printWindow) {
+//       console.error('Failed to open print window. Please allow pop-ups.');
+//       return;
+//     }
+
+//     const doc = printWindow.document;
+
+//     // Properly create HTML
+//     doc.open();
+//     doc.write('<!DOCTYPE html>');
+//     const html = doc.createElement('html');
+//     const head = doc.createElement('head');
+//     const body = doc.createElement('body');
+
+//     // Set title
+//     const title = doc.createElement('title');
+//     title.innerText = documentTitle;
+//     head.appendChild(title);
+
+//     // Copy styles
+//     const styleSheets = Array.from(document.querySelectorAll('style, link[rel="stylesheet"]'));
+//     styleSheets.forEach((styleSheet) => {
+//       head.appendChild(styleSheet.cloneNode(true));
+//     });
+
+//     // Add print specific styles
+//     const printStyle = doc.createElement('style');
+//     printStyle.textContent = `
+//       @media print {
+//         body {
+//           -webkit-print-color-adjust: exact;
+//           print-color-adjust: exact;
+//         }
+//         .page-break {
+//           page-break-after: always;
+//         }
+//       }
+//     `;
+//     head.appendChild(printStyle);
+
+//     // Set content
+//     body.innerHTML = contentRef.current.innerHTML;
+
+//     html.appendChild(head);
+//     html.appendChild(body);
+//     doc.appendChild(html);
+//     doc.close();
+
+//     printWindow.focus();
+//     printWindow.onload = () => {
+//       printWindow.print();
+//       printWindow.onafterprint = () => {
+//         printWindow.close();
+//         onAfterPrint?.();
+//       };
+//     };
+//   }, [documentTitle, onBeforePrint, onAfterPrint]);
+
+//   useImperativeHandle(ref, () => ({ print: handlePrint }), [handlePrint]);
+
+//   return <div ref={contentRef}>{children}</div>;
+// });
+
+// ReactElementPrinter.displayName = 'ReactElementPrinter';
+
+// export default ReactElementPrinter;
 import React, { useRef, forwardRef, useImperativeHandle, useCallback } from 'react';
 
 const ReactElementPrinter = forwardRef(({
@@ -23,55 +108,62 @@ const ReactElementPrinter = forwardRef(({
     }
 
     const doc = printWindow.document;
-
-    // Properly create HTML
     doc.open();
     doc.write('<!DOCTYPE html>');
-    const html = doc.createElement('html');
-    const head = doc.createElement('head');
-    const body = doc.createElement('body');
-
-    // Set title
-    const title = doc.createElement('title');
-    title.innerText = documentTitle;
-    head.appendChild(title);
-
-    // Copy styles
-    const styleSheets = Array.from(document.querySelectorAll('style, link[rel="stylesheet"]'));
-    styleSheets.forEach((styleSheet) => {
-      head.appendChild(styleSheet.cloneNode(true));
-    });
-
-    // Add print specific styles
-    const printStyle = doc.createElement('style');
-    printStyle.textContent = `
-      @media print {
-        body {
-          -webkit-print-color-adjust: exact;
-          print-color-adjust: exact;
-        }
-        .page-break {
-          page-break-after: always;
-        }
-      }
-    `;
-    head.appendChild(printStyle);
-
-    // Set content
-    body.innerHTML = contentRef.current.innerHTML;
-
-    html.appendChild(head);
-    html.appendChild(body);
-    doc.appendChild(html);
+    doc.write('<html><head><title>' + documentTitle + '</title></head><body></body></html>');
     doc.close();
 
-    printWindow.focus();
+    // Wait until the new window's document is ready
     printWindow.onload = () => {
-      printWindow.print();
-      printWindow.onafterprint = () => {
-        printWindow.close();
-        onAfterPrint?.();
-      };
+      const head = doc.head;
+      const body = doc.body;
+
+      // Add base tag for relative paths
+      const base = doc.createElement('base');
+      base.href = window.location.origin;
+      head.appendChild(base);
+
+      // Inline all accessible CSS
+      Array.from(document.styleSheets).forEach((sheet) => {
+        try {
+          const rules = sheet.cssRules;
+          if (!rules) return;
+
+          const style = doc.createElement('style');
+          style.textContent = Array.from(rules).map(rule => rule.cssText).join('\n');
+          head.appendChild(style);
+        } catch (err) {
+          console.warn('Could not access stylesheet:', sheet.href, err);
+        }
+      });
+
+      // Add print-specific styles
+      const printStyle = doc.createElement('style');
+      printStyle.textContent = `
+        @media print {
+          body {
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+          }
+          .page-break {
+            page-break-after: always;
+          }
+        }
+      `;
+      head.appendChild(printStyle);
+
+      // Set print content
+      body.innerHTML = contentRef.current.innerHTML;
+
+      // Wait a bit to ensure styles are applied
+      setTimeout(() => {
+        printWindow.focus();
+        printWindow.print();
+        printWindow.onafterprint = () => {
+          printWindow.close();
+          onAfterPrint?.();
+        };
+      }, 500);
     };
   }, [documentTitle, onBeforePrint, onAfterPrint]);
 
