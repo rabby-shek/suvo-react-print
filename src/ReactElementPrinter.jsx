@@ -4,10 +4,8 @@ import React, {
   forwardRef,
   useImperativeHandle,
   useCallback,
-  useEffect,
-  useState,
 } from 'react';
-import { createRoot } from 'react-dom/client';
+import ReactDOM from 'react-dom';
 
 const ReactElementPrinter = forwardRef(
   (
@@ -17,11 +15,11 @@ const ReactElementPrinter = forwardRef(
       onBeforePrint,
       onAfterPrint,
       printStyles = '',
+      externalStylesheets = [],
     },
     ref
   ) => {
     const contentRef = useRef(null);
-    const [container, setContainer] = useState(null);
 
     const handlePrint = useCallback(() => {
       onBeforePrint?.();
@@ -33,11 +31,19 @@ const ReactElementPrinter = forwardRef(
       }
 
       const printDoc = printWindow.document;
-      const rootDiv = printDoc.createElement('div');
-      rootDiv.id = 'print-root';
-      printDoc.body.appendChild(rootDiv);
 
-      // Inject styles
+      // Set title
+      printDoc.title = documentTitle;
+
+      // Inject external stylesheets
+      externalStylesheets.forEach(href => {
+        const link = printDoc.createElement('link');
+        link.rel = 'stylesheet';
+        link.href = href;
+        printDoc.head.appendChild(link);
+      });
+
+      // Add print-specific styles
       const styleTag = printDoc.createElement('style');
       styleTag.type = 'text/css';
       styleTag.innerHTML = `
@@ -51,29 +57,25 @@ const ReactElementPrinter = forwardRef(
       `;
       printDoc.head.appendChild(styleTag);
 
-      // Clone original styles
-      document.querySelectorAll('style, link[rel="stylesheet"]').forEach((node) => {
-        printDoc.head.appendChild(node.cloneNode(true));
-      });
+      // Create root container
+      const rootDiv = printDoc.createElement('div');
+      printDoc.body.appendChild(rootDiv);
 
-      const renderRoot = createRoot(rootDiv);
-      renderRoot.render(
-        <div ref={contentRef}>
-          {children}
-        </div>
+      // Render the content
+      ReactDOM.render(
+        <div ref={contentRef}>{children}</div>,
+        rootDiv
       );
 
-      // Wait a tick before printing
       setTimeout(() => {
         printWindow.focus();
         printWindow.print();
-
         printWindow.onafterprint = () => {
           printWindow.close();
           onAfterPrint?.();
         };
       }, 500);
-    }, [children, printStyles, documentTitle, onBeforePrint, onAfterPrint]);
+    }, [children, printStyles, documentTitle, onBeforePrint, onAfterPrint, externalStylesheets]);
 
     useImperativeHandle(ref, () => ({
       print: handlePrint,
