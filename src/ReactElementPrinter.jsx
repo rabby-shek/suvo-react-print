@@ -1,11 +1,9 @@
-// src/ReactElementPrinter.jsx
 import React, {
-  useRef,
   forwardRef,
   useImperativeHandle,
+  useRef,
   useCallback,
 } from 'react';
-import ReactDOM from 'react-dom';
 
 const ReactElementPrinter = forwardRef(
   (
@@ -15,73 +13,77 @@ const ReactElementPrinter = forwardRef(
       onBeforePrint,
       onAfterPrint,
       printStyles = '',
-      externalStylesheets = [],
     },
     ref
   ) => {
     const contentRef = useRef(null);
 
     const handlePrint = useCallback(() => {
-      onBeforePrint?.();
-
-      const printWindow = window.open('', '_blank', 'width=800,height=600');
-      if (!printWindow || !printWindow.document) {
-        console.error('Print window failed to open.');
+      if (!contentRef.current) {
+        console.error('No content to print');
         return;
       }
 
-      const printDoc = printWindow.document;
+      onBeforePrint?.();
 
-      // Set title
-      printDoc.title = documentTitle;
+      const printWindow = window.open('', '_blank', 'width=800,height=600');
+      if (!printWindow) {
+        console.error('Failed to open print window');
+        return;
+      }
 
-      // Inject external stylesheets
-      externalStylesheets.forEach(href => {
-        const link = printDoc.createElement('link');
-        link.rel = 'stylesheet';
-        link.href = href;
-        printDoc.head.appendChild(link);
+      const doc = printWindow.document;
+      doc.open();
+      doc.write(`
+        <html>
+          <head>
+            <title>${documentTitle}</title>
+
+            <style>
+              @media print {
+                * {
+                  -webkit-print-color-adjust: exact !important;
+                  print-color-adjust: exact !important;
+                }
+              }
+
+              ${printStyles}
+            </style>
+      `);
+
+      // Copy all styles from parent
+      Array.from(document.styleSheets).forEach((styleSheet) => {
+        try {
+          if (styleSheet.href) {
+            doc.write(`<link rel="stylesheet" href="${styleSheet.href}">`);
+          } else {
+            const rules = styleSheet.cssRules;
+            const css = Array.from(rules).map(rule => rule.cssText).join('\n');
+            doc.write(`<style>${css}</style>`);
+          }
+        } catch (e) {
+          // Cross-origin stylesheet, ignore
+        }
       });
 
-      // Add print-specific styles
-      const styleTag = printDoc.createElement('style');
-      styleTag.type = 'text/css';
-      styleTag.innerHTML = `
-        @media print {
-          * {
-            -webkit-print-color-adjust: exact !important;
-            print-color-adjust: exact !important;
-          }
-        }
-        ${printStyles}
-      `;
-      printDoc.head.appendChild(styleTag);
+      doc.write(`</head><body>`);
+      doc.write(`<div id="print-root">${contentRef.current.innerHTML}</div>`);
+      doc.write(`</body></html>`);
+      doc.close();
 
-      // Create root container
-      const rootDiv = printDoc.createElement('div');
-      printDoc.body.appendChild(rootDiv);
-
-      // Render the content
-      ReactDOM.render(
-        <div ref={contentRef}>{children}</div>,
-        rootDiv
-      );
-
-      setTimeout(() => {
+      printWindow.onload = () => {
         printWindow.focus();
         printWindow.print();
         printWindow.onafterprint = () => {
           printWindow.close();
           onAfterPrint?.();
         };
-      }, 500);
-    }, [children, printStyles, documentTitle, onBeforePrint, onAfterPrint, externalStylesheets]);
+      };
+    }, [documentTitle, printStyles, onBeforePrint, onAfterPrint]);
 
-    useImperativeHandle(ref, () => ({
-      print: handlePrint,
-    }));
+    useImperativeHandle(ref, () => ({ print: handlePrint }), [handlePrint]);
 
-    return null;
+    return <div ref={contentRef} style={{ display: 'none' }}>{children}</div>;
   }
 );
 
