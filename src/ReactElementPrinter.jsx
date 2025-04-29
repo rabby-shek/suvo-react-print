@@ -35,7 +35,6 @@ const ReactElementPrinter = forwardRef(
       const doc = printWindow.document;
       doc.open();
 
-      // Start building the document
       doc.write(`
         <html>
           <head>
@@ -47,12 +46,10 @@ const ReactElementPrinter = forwardRef(
                   print-color-adjust: exact !important;
                 }
               }
-
               ${printStyles}
             </style>
       `);
 
-      // Try to include parent styles
       Array.from(document.styleSheets).forEach((styleSheet) => {
         try {
           if (styleSheet.href) {
@@ -64,7 +61,7 @@ const ReactElementPrinter = forwardRef(
             doc.write(`<style>${css}</style>`);
           }
         } catch (e) {
-          // Ignore cross-origin errors
+          // ignore cross-origin
         }
       });
 
