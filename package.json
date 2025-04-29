@@ -1,6 +1,6 @@
 {
   "name": "printmint",
-  "version": "1.0.10",
+  "version": "1.0.11",
   "description": "",
   "main": "dist/ReactElementPrinter.js",
   "scripts": {
