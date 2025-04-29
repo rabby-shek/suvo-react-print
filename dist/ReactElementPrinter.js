@@ -30,11 +30,7 @@ var ReactElementPrinter = /*#__PURE__*/(0, _react.forwardRef)(function (_ref, re
     }
     var doc = printWindow.document;
     doc.open();
-
-    // Start building the document
-    doc.write("\n        <html>\n          <head>\n            <title>".concat(documentTitle, "</title>\n            <style>\n              @media print {\n                * {\n                  -webkit-print-color-adjust: exact !important;\n                  print-color-adjust: exact !important;\n                }\n              }\n\n              ").concat(printStyles, "\n            </style>\n      "));
-
-    // Try to include parent styles
+    doc.write("\n        <html>\n          <head>\n            <title>".concat(documentTitle, "</title>\n            <style>\n              @media print {\n                * {\n                  -webkit-print-color-adjust: exact !important;\n                  print-color-adjust: exact !important;\n                }\n              }\n              ").concat(printStyles, "\n            </style>\n      "));
     Array.from(document.styleSheets).forEach(function (styleSheet) {
       try {
         if (styleSheet.href) {
@@ -46,7 +42,7 @@ var ReactElementPrinter = /*#__PURE__*/(0, _react.forwardRef)(function (_ref, re
           doc.write("<style>".concat(css, "</style>"));
         }
       } catch (e) {
-        // Ignore cross-origin errors
+        // ignore cross-origin
       }
     });
     doc.write("\n          </head>\n          <body>\n            <div id=\"print-root\">".concat(contentRef.current.innerHTML, "</div>\n          </body>\n        </html>\n      "));
