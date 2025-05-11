@@ -1,8 +1,3 @@
-
-
-//===================
-// version 3
-//===================
 import React, { forwardRef, useImperativeHandle, useRef } from 'react';
 
 const ReactElementPrinter = forwardRef(({ children, documentTitle = 'Print' }, ref) => {
@@ -23,29 +18,36 @@ const ReactElementPrinter = forwardRef(({ children, documentTitle = 'Print' }, r
 
       const doc = printWindow.document;
       doc.open();
+
+      let styles = '';
+
+      Array.from(document.styleSheets).forEach((styleSheet) => {
+        try {
+          if (styleSheet.href) {
+            // External stylesheets (like Bootstrap, Tailwind, etc.)
+            styles += `<link rel="stylesheet" href="${styleSheet.href}" />`;
+          } else if (styleSheet.cssRules) {
+            // Inline stylesheets
+            const css = Array.from(styleSheet.cssRules)
+              .map(rule => rule.cssText)
+              .join(' ');
+            styles += `<style>${css}</style>`;
+          }
+        } catch (e) {
+          console.warn('Error accessing stylesheet:', e);
+        }
+      });
+
       doc.write(`
         <html>
           <head>
             <title>${documentTitle}</title>
+            ${styles}
             <style>
               @media print {
                 body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
               }
             </style>
-      `);
-
-      // Copy external styles
-      Array.from(document.styleSheets).forEach(styleSheet => {
-        try {
-          if (styleSheet.href) {
-            doc.write(`<link rel="stylesheet" href="${styleSheet.href}">`);
-          }
-        } catch (err) {
-          // Ignore cross-origin styles
-        }
-      });
-
-      doc.write(`
           </head>
           <body>
             <div>${contentRef.current.innerHTML}</div>
