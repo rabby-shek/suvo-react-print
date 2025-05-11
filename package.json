@@ -1,6 +1,6 @@
 {
   "name": "printmint",
-  "version": "1.0.13",
+  "version": "1.0.14",
   "main": "dist/ReactElementPrinter.js",
   "scripts": {
     "build": "babel src --out-dir dist --extensions \".js,.jsx\""
