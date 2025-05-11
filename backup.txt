@@ -1,0 +1,164 @@
+//===========================
+// version 1
+//=============================
+
+// import React, {
+//   forwardRef,
+//   useImperativeHandle,
+//   useRef,
+//   useCallback,
+// } from 'react';
+
+// const ReactElementPrinter = forwardRef(
+//   (
+//     {
+//       children,
+//       documentTitle = 'Print',
+//       onBeforePrint,
+//       onAfterPrint,
+//       printStyles = '',
+//     },
+//     ref
+//   ) => {
+//     const contentRef = useRef(null);
+
+//     const handlePrint = useCallback(() => {
+//       if (!contentRef.current) {
+//         console.error('No content to print');
+//         return;
+//       }
+
+//       onBeforePrint?.();
+
+//       const printWindow = window.open('', '_blank', 'width=800,height=600');
+//       if (!printWindow) {
+//         console.error('Failed to open print window');
+//         return;
+//       }
+
+//       const doc = printWindow.document;
+//       doc.open();
+
+//       // Start document
+//       doc.write(`
+//         <html>
+//           <head>
+//             <title>${documentTitle}</title>
+//             <style>
+//               @media print {
+//                 * {
+//                   -webkit-print-color-adjust: exact !important;
+//                   print-color-adjust: exact !important;
+//                 }
+//                 ${printStyles}
+//               }
+//             </style>
+//       `);
+
+//       // Add stylesheets from the parent document
+//       Array.from(document.styleSheets).forEach((styleSheet) => {
+//         try {
+//           if (styleSheet.href) {
+//             doc.write(`<link rel="stylesheet" href="${styleSheet.href}">`);
+//           } else if (styleSheet.cssRules) {
+//             const css = Array.from(styleSheet.cssRules)
+//               .map(rule => rule.cssText)
+//               .join('\n');
+//             doc.write(`<style>${css}</style>`);
+//           }
+//         } catch (e) {
+//           // Ignore cross-origin issues
+//         }
+//       });
+
+//       // Inject inline styles for the print window
+//       doc.write(`
+//             </head>
+//             <body>
+//               <div id="print-root" style="width: 100%; padding: 10px; box-sizing: border-box;">
+//                 ${contentRef.current.innerHTML}
+//               </div>
+//             </body>
+//           </html>
+//         `);
+
+//       doc.close();
+
+//       printWindow.onload = () => {
+//         printWindow.focus();
+//         printWindow.print();
+//         printWindow.onafterprint = () => {
+//           printWindow.close();
+//           onAfterPrint?.();
+//         };
+//       };
+//     }, [documentTitle, printStyles, onBeforePrint, onAfterPrint]);
+
+//     useImperativeHandle(ref, () => ({ print: handlePrint }), [handlePrint]);
+
+//     return <div ref={contentRef} style={{ display: 'none' }}>{children}</div>;
+//   }
+// );
+
+// ReactElementPrinter.displayName = 'ReactElementPrinter';
+// export default ReactElementPrinter;
+
+
+
+//=============================
+// version 2
+//=============================
+
+// import React, { forwardRef, useImperativeHandle, useRef } from 'react';
+
+// const ReactElementPrinter = forwardRef(({ children, documentTitle = 'Print' }, ref) => {
+//   const contentRef = useRef(null);
+
+//   useImperativeHandle(ref, () => ({
+//     print: () => {
+//       if (!contentRef.current) {
+//         console.error('No content to print');
+//         return;
+//       }
+
+//       const printWindow = window.open('', '_blank', 'width=800,height=600');
+//       if (!printWindow) {
+//         console.error('Failed to open print window');
+//         return;
+//       }
+
+//       const doc = printWindow.document;
+//       doc.open();
+//       doc.write(`
+//         <html>
+//           <head>
+//             <title>${documentTitle}</title>
+//             <style>
+//               @media print {
+//                 body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+//               }
+//             </style>
+//           </head>
+//           <body>
+//             <div>${contentRef.current.innerHTML}</div>
+//           </body>
+//         </html>
+//       `);
+//       doc.close();
+
+//       printWindow.onload = () => {
+//         printWindow.focus();
+//         printWindow.print();
+//         printWindow.onafterprint = () => {
+//           printWindow.close();
+//         };
+//       };
+//     }
+//   }));
+
+//   return <div ref={contentRef} style={{ display: 'none' }}>{children}</div>;
+// });
+
+// ReactElementPrinter.displayName = 'ReactElementPrinter';
+
+// export default ReactElementPrinter;
