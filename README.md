@@ -1,4 +1,8 @@
 
+(updating styles issues phase) 
+you can use this using inline css styles now
+package is updating for copying styles automatically wait until its done 
+or work with inline css styles
 # React Element Printer
 
 A React component to easily print any part of the page, automatically copying styles and external resources for a seamless print experience. No need to manually pass styles — it handles everything for you!
